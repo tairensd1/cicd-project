@@ -201,7 +201,7 @@ jobs:
             echo "less install complete"
             cd ./backend
             npm install
-            npm run migrations >> migrations.txt
+            npm run migrations 2>&1 | tee migrations.txt
             status=$(cat migrations.txt | grep -i "has been executed successfully")
             if [ $status ]
             then
@@ -209,6 +209,7 @@ jobs:
             else
             curl -H "Content-Type: text/plain" -H "token: tairen-${CIRCLE_WORKFLOW_ID}" --request PUT --data "1" https://api.memstash.io/values/migration-${CIRCLE_WORKFLOW_ID}
             fi
+      - revert-migrations
       - destroy-environment
   
   deploy-frontend:
