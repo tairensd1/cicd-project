@@ -1,0 +1,57 @@
+- name: Create a directory if it does not exist
+  become: true
+  ansible.builtin.file:
+    path: /home/ubuntu/project/backend
+    state: directory
+    mode: '0755'
+
+- name: "copy folder "
+  become: true
+  copy:
+    src: /root/project/backend/backend.tar.gz
+    dest: /home/ubuntu/project/backend
+
+- name: "untar folder "
+  become: true
+  ansible.builtin.unarchive:
+    src: /home/ubuntu/project/backend/backend.tar.gz
+    dest: /home/ubuntu/project/backend/
+    remote_src: yes
+    
+- name: "update apt packages."
+  become: yes
+  apt:
+    update_cache: yes
+
+- name: "upgrade packages"
+  become: yes
+  apt:
+    upgrade: yes
+
+- name: remove dependencies that are no longer required
+  become: yes
+  apt:
+    autoremove: yes
+
+- name: "install dependencies."
+  become: yes
+  apt:
+    name: ["nodejs", "npm"]
+    state: latest
+    update_cache: yes
+
+    
+- name: "install pm2"
+  become: true
+  npm:
+    name: pm2
+    global: yes
+    production: yes
+    state: present
+    
+    
+- name: Executing node
+  become: true  
+  shell: |
+    cd /home/ubuntu/project/backend
+    pm2 start npm --name backend -- start
