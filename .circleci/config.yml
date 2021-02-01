@@ -2,7 +2,7 @@ version: 2.1
 parameters:
   version-cache:
     type: string
-    default: "v3"
+    default: "v4"
 
 commands:
   destroy-environment:
@@ -23,8 +23,8 @@ commands:
           name: Revert migrations
           when: on_fail
           command: |
-            SUCCESS = `curl -H "token: tairen-${CIRCLE_WORKFLOW_ID}" --request GET https://api.memstash.io/values/migration-${CIRCLE_WORKFLOW_ID}`
-            if(( $SUCCESS==1 )); 
+            success=`curl -H "token: tairen-${CIRCLE_WORKFLOW_ID}" --request GET https://api.memstash.io/values/migration-${CIRCLE_WORKFLOW_ID}`
+            if(( $success==1 )); 
             then
             cd ./backend
             npm install
@@ -187,22 +187,37 @@ jobs:
       - image: circleci/node:13.8.0
     steps:
       - checkout
+      - restore_cache:
+          keys: [backend-build-<< pipeline.parameters.version-cache >>]
       - run:
-          name: Run migrations
+          name: update and install python
           command: |
             sudo apt-get update
             sudo apt-get install python3
+      - run:
+          name: install awscli
+          command: |
             curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
             unzip awscliv2.zip
             echo "unzip complete"
             sudo ./aws/install
             echo "aws install complete"
+      - run:
+          name: install less
+          command: |
             sudo apt-get install less
             echo "less install complete"
+      - run:
+          name: run npm i and migration
+          no_output_timeout: 15m
+          command: |
             cd ./backend
-            npm install
+            npm i
             npm run migrations 2>&1 | tee migrations.txt
             status=$(cat migrations.txt | grep -i "has been executed successfully")
+      - run:
+          name: check migration status and put into memstash 
+          command: |
             if [ $status ]
             then
             curl -H "Content-Type: text/plain" -H "token: tairen-${CIRCLE_WORKFLOW_ID}" --request PUT --data "0" https://api.memstash.io/values/migration-${CIRCLE_WORKFLOW_ID}
@@ -231,6 +246,9 @@ jobs:
             echo "unzip complete"
             sudo ./aws/install
             echo "aws install complete"
+      - run:
+          name: install less
+          command: |
             sudo apt-get install less
             echo "less install complete"
       - run:
@@ -246,7 +264,7 @@ jobs:
             npm i
             npm run build
             tar -C dist -czvf dist.tar.gz ./backend
-            aws s3 sync dist "s3://udapeople-${CIRCLE_WORKFLOW_ID}""
+            aws s3 sync dist "s3://udapeople-${CIRCLE_WORKFLOW_ID}"
       - revert-migrations
       - destroy-environment      
                     
