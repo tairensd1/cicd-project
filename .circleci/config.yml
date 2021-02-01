@@ -36,7 +36,8 @@ commands:
       - run:
           name: create inventory file for ip
           command: |
-            aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --filters "Name=tag:aws:cloudformation:stack-name,Values=cicd-backend-${CIRCLE_WORKFLOW_ID}" --output text >> ./.circleci/ansible/inventory.txt
+            aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --filters "Name=tag:aws:cloudformation:stack-name,Values=cicd-backend-${CIRCLE_WORKFLOW_ID}" --output text >> ./.circleci/ansible/inventory
+            cat ./.circleci/ansible/inventory
 
   get-backend-stack-url:
     steps:
@@ -168,11 +169,15 @@ jobs:
               --tags project=cicdfrontend \
               --stack-name "cicd-frontend-${CIRCLE_WORKFLOW_ID}" \
               --parameter-overrides ID="${CIRCLE_WORKFLOW_ID}"
-      - get_stack_ip
+      - run:
+          name: create inventory file for ip
+          command: |
+            aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --filters "Name=tag:aws:cloudformation:stack-name,Values=cicd-backend-${CIRCLE_WORKFLOW_ID}" --output text >> ./.circleci/ansible/inventory
+            cat ./.circleci/ansible/inventory
       - save_cache:
           key: ip-address-{{ .Branch }}-{{ .Revision }}
           paths:
-            - ./.circleci/ansible/inventory.txt
+            - ./.circleci/ansible/inventory
       - destroy-environment
   
   configure-infrastructure:
@@ -197,7 +202,7 @@ jobs:
           name: Configure server
           command: |
             cat ./.circleci/ansible/inventory.txt
-            ansible-playbook -i ./.circleci/ansible/inventory.txt ./.circleci/ansible/configure-server.yml
+            ansible-playbook -i ./.circleci/ansible/inventory ./.circleci/ansible/configure-server.yml
       - destroy-environment   
 
   run-migrations:
@@ -322,7 +327,7 @@ jobs:
 
              tar -C backend -czvf backend.tar.gz .
              cp -p backend.tar.gz ./backend/backend.tar.gz
-             ansible-playbook ./.circleci/ansible/deploy-backend.yml -i ./.circleci/ansible/inventory.txt
+             ansible-playbook ./.circleci/ansible/deploy-backend.yml -i ./.circleci/ansible/inventory
       - revert-migrations
       - destroy-environment  
       
@@ -357,7 +362,7 @@ jobs:
             BACKEND_IP=`cat ./back-end-url`
             export API_URL="http://${BACKEND_IP}:3030"
             echo "${API_URL}"
-            if curl -s "${API_URL}/api/status" | grep "working"
+            if curl -s "${API_URL}/api/status" | grep "ok"
             then
             echo "Success"
             exit 0
