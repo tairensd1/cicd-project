@@ -235,7 +235,7 @@ jobs:
       - run:
           name: installing tar
           command: |
-            yum -y install tar gzip
+            sudo apt-get install tar gzip
       - restore_cache:
           keys: ["back-end-url-{{ .Revision }}"]
       - run:
@@ -281,9 +281,16 @@ jobs:
           name: Install dependencies
           command: |
             apk add --update ansible curl
+      - run:
+          name: Install aws cli
+          command: |
             curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
             unzip awscliv2.zip
-            sudo ./aws/install
+            ./aws/install
+      - run:
+          name: Install less
+          command: |
+            apk add --update less 
       - run:
           name: Deploy backend
           command: |
