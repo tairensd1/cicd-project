@@ -126,9 +126,27 @@ jobs:
 
   deploy-infrastructure:
     docker:
-      - image: amazon/aws-cli
+      - image: circleci/node:13.8.0
     steps:
       - checkout
+      - run:
+          name: update and install python
+          command: |
+            sudo apt-get update
+            sudo apt-get install python3
+      - run:
+          name: install awscli
+          command: |
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip awscliv2.zip
+            echo "unzip complete"
+            sudo ./aws/install
+            echo "aws install complete"
+      - run:
+          name: install less
+          command: |
+            sudo apt-get install less
+            echo "less install complete"
       - run:
           name: Ensure back-end infrastructure exists
           command: |
@@ -237,7 +255,7 @@ jobs:
           command: |
             sudo apt-get install tar gzip
       - restore_cache:
-          keys: ["back-end-url-{{ .Revision }}"]
+          key: "back-end-url-{{ .Revision }}"
       - run:
           name: Install aws cli
           command: |
