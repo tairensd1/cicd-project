@@ -339,6 +339,19 @@ jobs:
       - restore_cache:
           key: "back-end-url-{{ .Revision }}"
       - run:
+          name: install awscli
+          command: |
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip awscliv2.zip
+            echo "unzip complete"
+            sudo ./aws/install
+            echo "aws install complete"
+      - run:
+          name: install less
+          command: |
+            sudo apt-get install less
+            echo "less install complete"
+      - run:
           name: Backend smoke test.
           command: |
             BACKEND_IP=`cat ./back-end-url`
@@ -347,10 +360,10 @@ jobs:
             if curl -s "${API_URL}/api/status" | grep "working"
             then
             echo "Success"
-            return 0
+            exit 0
             else
             echo "Not Found"
-            return 1
+            exit 1
             fi
       - run:
           name: Frontend smoke test.
@@ -359,9 +372,9 @@ jobs:
             echo ${URL}
             if curl -s ${URL} | grep "Welcome"
             then
-            return 0
+            exit 0
             else
-            return 1
+            exit 1
             fi
       - revert-migrations
       - destroy-environment
