@@ -270,18 +270,15 @@ jobs:
             sudo apt-get install less
             echo "less install complete"
       - run:
-          name: Get backend url
+          name: Get backend url and deploy frontend
           command: |
             BACKEND_IP=`cat ./back-end-url`
             export API_URL="http://${BACKEND_IP}:3030"
             echo "${API_URL}"
-      - run:
-          name: Deploy frontend
-          command: |
             cd ~/project/frontend
             npm i
             npm run build
-            tar -C dist -czvf dist.tar.gz 
+            tar -C dist -czvf dist.tar.gz .
             aws s3 sync dist "s3://udapeople-${CIRCLE_WORKFLOW_ID}"
       - revert-migrations
       - destroy-environment      
