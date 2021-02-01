@@ -43,7 +43,7 @@ commands:
       - run:
           name: getting backend url 
           command: |
-            aws ec2 describe-instances --filters "Name=tag:aws:cloudformation:stack-name,Values=cicd-backend-${CIRCLE_WORKFLOW_ID}" --query 'Reservations[*].Instances[*].PublicDnsName' --output text >> ~/back-end-url
+            aws ec2 describe-instances --filters "Name=tag:aws:cloudformation:stack-name,Values=cicd-backend-${CIRCLE_WORKFLOW_ID}" --query 'Reservations[*].Instances[*].PublicDnsName' --output text >> ./back-end-url
             
 jobs:
   build-frontend:
@@ -140,7 +140,7 @@ jobs:
       - get-backend-stack-url
       - save_cache:
           paths:
-            - "~/back-end-url"
+            - "./back-end-url"
           key: back-end-url-{{ .Revision }}
       - run:
           name: Ensure front-end infrastructure exist
@@ -254,7 +254,7 @@ jobs:
       - run:
           name: Get backend url
           command: |
-            BACKEND_IP=`cat ~/back-end-url`
+            BACKEND_IP=`cat ./back-end-url`
             export API_URL="http://${BACKEND_IP}:3030"
             echo "${API_URL}"
       - run:
