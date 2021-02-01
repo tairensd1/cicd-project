@@ -328,20 +328,20 @@ jobs:
       
   smoke-test:
     docker:
-      - image: python:3.7-alpine3.11
+      - image: circleci/node:13.8.0
     steps:
       - checkout
       - run:
-          name: Install dependencies
+          name: update and install python
           command: |
-            apk add --update curl
-            pip install awscli
+            sudo apt-get update
+            sudo apt-get install python3 curl
       - restore_cache:
           key: "back-end-url-{{ .Revision }}"
       - run:
           name: Backend smoke test.
           command: |
-            BACKEND_IP=`cat ~/project/back-end-url`
+            BACKEND_IP=`cat ./back-end-url`
             export API_URL="http://${BACKEND_IP}:3030"
             echo "${API_URL}"
             if curl -s "${API_URL}/api/status" | grep "working"
